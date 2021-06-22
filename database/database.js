@@ -7,7 +7,7 @@ const connection = new Pool({
     password: '123456',
     host: 'localhost',
     port: 5432,
-    database: 'financial-data'
+    database: 'financial_data'
 })
 
 export default connection;

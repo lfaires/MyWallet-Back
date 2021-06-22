@@ -9,7 +9,7 @@ const app = express()
 app.use(express.json());
 app.use(cors());
 
-app.get('/', async (req,res) => {
+app.post('/', async (req,res) => {
     const { email, password } = req.body;
 
     try{
@@ -18,7 +18,7 @@ app.get('/', async (req,res) => {
             WHERE email = $1
             AND password = $2`,[email, password])
 
-        if (login.rows === 0) return res.sendStatus(401)
+        if (login.rows.length === 0) return res.sendStatus(401)
 
         res.sendStatus(200)
         

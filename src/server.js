@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+
 import connection from '../database/database.js'
 import signUpSchema from '../schemas/signUpSchema.js'
 
@@ -29,10 +30,11 @@ app.get('/', async (req,res) => {
 
 app.post('/sign-up', async (req,res) => {
     const { name, email, password, repeatPassword } = req.body;
-    const registerDate = '2021-06-22';
-
-    const { error } = signUpSchema.validate({name: name, email: email, password: password, repeatPassword: repeatPassword, registerDate: registerDate});
-
+    const createdDate = new Date;
+    const lastUpdated = createdDate;
+    
+    const { error } = signUpSchema.validate({name: name, email: email, password: password, repeat_password: repeatPassword});
+ 
     if (error !== undefined) return res.sendStatus(400);
 
     try{
@@ -40,12 +42,12 @@ app.post('/sign-up', async (req,res) => {
             SELECT * FROM users 
             WHERE email = $1`,[email]);
 
-        if(checkEmail !==0) return res.sendStatus(400);
+        if(checkEmail.rows.length !==0) return res.sendStatus(409);
 
         const register = await connection.query(`
-            INSERT INTO users (name, email, password, repeatpassword, registerdate) 
+            INSERT INTO users (name, email, password, created_at, updated_at) 
             VALUES ($1, $2, $3, $4, $5)`,
-            [name, email, password, repeatPassword, registerDate])
+            [name, email, password, createdDate, lastUpdated])
         
         res.sendStatus(201)
 

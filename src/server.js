@@ -8,6 +8,25 @@ const app = express()
 app.use(express.json());
 app.use(cors());
 
+app.get('/', async (req,res) => {
+    const { email, password } = req.body;
+
+    try{
+        const login = await connection.query(`
+            SELECT * FROM users 
+            WHERE email = $1
+            AND password = $2`,[email, password])
+
+        if (login.rows === 0) return res.sendStatus(401)
+
+        res.sendStatus(200)
+        
+    } catch (error){
+        console.log(error)
+        res.sendStatus(500)
+    }
+})
+
 app.post('/sign-up', async (req,res) => {
     const { name, email, password, repeatPassword } = req.body;
     const registerDate = '2021-06-22';

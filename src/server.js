@@ -26,6 +26,10 @@ app.post('/', async (req,res) => {
             const token = v4();
 
             await connection.query(`
+            DELETE FROM sessions ("userId") 
+            VALUES ($1)`, [user.id]);
+
+            await connection.query(`
             INSERT INTO sessions ("userId", token) 
             VALUES ($1, $2)`, [user.id, token]);
 
@@ -108,8 +112,7 @@ app.post('/add-transaction/:type', async (req,res) => {
     const { type } = req.params
     const { value, description } = req.body
     const validValue = parseInt(value)*100
-    const created_at = new Date;
-    const userId = 7;
+    const created_at = new Date;    
 
     if(!token) return res.sendStatus(401)
 
@@ -139,7 +142,7 @@ app.post('/add-transaction/:type', async (req,res) => {
 app.post('/sign-out', async (req,res) => {
     const authorization = req.header('Authorization');
     const token = authorization?.replace('Bearer ', '');
-    
+
     if(!token) return res.sendStatus(401)
     
     await connection.query(`

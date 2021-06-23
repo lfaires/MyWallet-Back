@@ -67,6 +67,27 @@ app.get('/transactions', async (req,res) => {
     const result = await connection.query('SELECT * FROM transactions')
     res.send(result.rows)
 })
+
+app.post('/add-transaction/:type', async (req,res) => {
+    const { type } = req.params
+    const { value, description } = req.body
+    const validValue = parseInt(value)*100
+    const created_at = new Date;
+    const userId = 7;
+
+    try{
+        const result = await connection.query(`
+        INSERT INTO transactions(description, value, category, "userId", created_at)
+        VALUES ($1, $2, $3, $4, $5)`, [description, validValue, type,userId, created_at])
+        
+        res.sendStatus(201)
+
+    } catch (error){
+        console.log(error)
+        res.sendStatus(501)
+    }
+})
+
 app.listen(4000, () => {
     console.log('Server running on port 4000')
 })

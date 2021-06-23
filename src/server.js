@@ -72,11 +72,27 @@ app.post('/sign-up', async (req,res) => {
 })
 
 app.get('/transactions', async (req,res) => {
-    const result = await connection.query('SELECT * FROM transactions')
+    const authorization = req.headers['authorization'];
+    const token = authorization.replace('Bearer', '').trim();
+
+    const user = await connection.query(`
+        SELECT * FROM sessions
+        JOIN users
+        ON sessions."userId" = users.id
+        WHERE sessions.token = $1`,[token])
+
+    const id = user.rows[0].userId
+    const result = await connection.query(`
+        SELECT transactions.*, users.name as username FROM transactions 
+        JOIN users
+        ON transactions."userId" = users.id
+        WHERE "userId" = $1`,[id])
     res.send(result.rows)
 })
 
 app.post('/add-transaction/:type', async (req,res) => {
+    const authorization = req.headers['authorization'];
+    const token = authorization.replace('Bearer', '').trim();
     const { type } = req.params
     const { value, description } = req.body
     const validValue = parseInt(value)*100
@@ -84,9 +100,17 @@ app.post('/add-transaction/:type', async (req,res) => {
     const userId = 7;
 
     try{
+        const user = await connection.query(`
+        SELECT * FROM sessions
+        JOIN users
+        ON sessions."userId" = users.id
+        WHERE sessions.token = $1`,[token])
+
+        const id = user.rows[0].userId
+
         const result = await connection.query(`
         INSERT INTO transactions(description, value, category, "userId", created_at)
-        VALUES ($1, $2, $3, $4, $5)`, [description, validValue, type,userId, created_at])
+        VALUES ($1, $2, $3, $4, $5)`, [description, validValue, type,id, created_at])
         
         res.sendStatus(201)
 

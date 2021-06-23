@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 } from 'uuid';
 
 import connection from '../database/database.js'
 import signUpSchema from '../schemas/signUpSchema.js'
@@ -20,10 +20,10 @@ app.post('/', async (req,res) => {
             WHERE email = $1`,[email])
 
         if (login.rows.length === 0) return res.sendStatus(401)
-        const user = login.rows[0];
 
         if(user && bcrypt.compareSync(password, user.password)){
-            const token = uuidv4();
+            const user = login.rows[0];
+            const token = v4();
 
             await connection.query(`
             INSERT INTO sessions ("userId", token) 
@@ -72,32 +72,46 @@ app.post('/sign-up', async (req,res) => {
 })
 
 app.get('/transactions', async (req,res) => {
-    const authorization = req.headers['authorization'];
-    const token = authorization.replace('Bearer', '').trim();
+    const authorization = req.header('Authorization');
+    const token = authorization?.replace('Bearer ', '');
 
-    const user = await connection.query(`
-        SELECT * FROM sessions
-        JOIN users
-        ON sessions."userId" = users.id
-        WHERE sessions.token = $1`,[token])
+    if(!token) return res.sendStatus(401)
 
-    const id = user.rows[0].userId
-    const result = await connection.query(`
-        SELECT transactions.*, users.name as username FROM transactions 
-        JOIN users
-        ON transactions."userId" = users.id
-        WHERE "userId" = $1`,[id])
-    res.send(result.rows)
+    try{
+        const user = await connection.query(`
+            SELECT * FROM sessions
+            JOIN users
+            ON sessions."userId" = users.id
+            WHERE sessions.token = $1`,[token])
+
+        const id = user.rows[0].userId
+
+        if(id) {
+            const result = await connection.query(`
+                SELECT transactions.*, users.name as username FROM transactions 
+                JOIN users
+                ON transactions."userId" = users.id
+                WHERE "userId" = $1`,[id])
+            res.send(result.rows)
+        } else {
+            res.sendStatus(401)
+        }
+    } catch (error){
+        console.log(error)
+        res.sendStatus(501)
+    }
 })
 
 app.post('/add-transaction/:type', async (req,res) => {
-    const authorization = req.headers['authorization'];
-    const token = authorization.replace('Bearer', '').trim();
+    const authorization = req.header('Authorization');
+    const token = authorization?.replace('Bearer ', '');
     const { type } = req.params
     const { value, description } = req.body
     const validValue = parseInt(value)*100
     const created_at = new Date;
     const userId = 7;
+
+    if(!token) return res.sendStatus(401)
 
     try{
         const user = await connection.query(`
@@ -107,17 +121,32 @@ app.post('/add-transaction/:type', async (req,res) => {
         WHERE sessions.token = $1`,[token])
 
         const id = user.rows[0].userId
-
-        const result = await connection.query(`
-        INSERT INTO transactions(description, value, category, "userId", created_at)
-        VALUES ($1, $2, $3, $4, $5)`, [description, validValue, type,id, created_at])
-        
-        res.sendStatus(201)
-
+        if(id){
+            const result = await connection.query(`
+            INSERT INTO transactions(description, value, category, "userId", created_at)
+            VALUES ($1, $2, $3, $4, $5)`, [description, validValue, type,id, created_at])
+            
+            res.sendStatus(201)
+        } else {
+            res.sendStatus(401)
+        }
     } catch (error){
         console.log(error)
         res.sendStatus(501)
     }
+})
+
+app.post('/sign-out', async (req,res) => {
+    const authorization = req.header('Authorization');
+    const token = authorization?.replace('Bearer ', '');
+    
+    if(!token) return res.sendStatus(401)
+    
+    await connection.query(`
+    DELTE FROM sessions
+    WHERE token = $1`,[token])
+
+    res.sendStatus(200)
 })
 
 app.listen(4000, () => {

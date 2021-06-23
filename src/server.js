@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import bcrypt from 'bcrypt';
 
 import connection from '../database/database.js'
 import signUpSchema from '../schemas/signUpSchema.js'
@@ -15,12 +16,16 @@ app.post('/', async (req,res) => {
     try{
         const login = await connection.query(`
             SELECT * FROM users 
-            WHERE email = $1
-            AND password = $2`,[email, password])
+            WHERE email = $1`,[email])
 
         if (login.rows.length === 0) return res.sendStatus(401)
+        const user = login.rows[0];
 
-        res.sendStatus(200)
+        if(user && bcrypt.compareSync(password, user.password)){
+            res.sendStatus(200)
+        } else {
+            res.sendStatus(404)
+        }
         
     } catch (error){
         console.log(error)
@@ -44,10 +49,11 @@ app.post('/sign-up', async (req,res) => {
 
         if(checkEmail.rows.length !==0) return res.sendStatus(409);
 
+        const hashPassword = bcrypt.hashSync(password,12)
         const register = await connection.query(`
             INSERT INTO users (name, email, password, created_at, updated_at) 
             VALUES ($1, $2, $3, $4, $5)`,
-            [name, email, password, createdDate, lastUpdated])
+            [name, email, hashPassword, createdDate, lastUpdated])
         
         res.sendStatus(201)
 
@@ -57,6 +63,10 @@ app.post('/sign-up', async (req,res) => {
     }
 })
 
+app.get('/transactions', async (req,res) => {
+    const result = await connection.query('SELECT * FROM transactions')
+    res.send(result.rows)
+})
 app.listen(4000, () => {
     console.log('Server running on port 4000')
 })

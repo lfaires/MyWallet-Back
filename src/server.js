@@ -1,6 +1,7 @@
-import express from 'express'
-import cors from 'cors'
+import express from 'express';
+import cors from 'cors';
 import bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
 
 import connection from '../database/database.js'
 import signUpSchema from '../schemas/signUpSchema.js'
@@ -22,7 +23,14 @@ app.post('/', async (req,res) => {
         const user = login.rows[0];
 
         if(user && bcrypt.compareSync(password, user.password)){
-            res.sendStatus(200)
+            const token = uuidv4();
+
+            await connection.query(`
+            INSERT INTO sessions ("userId", token) 
+            VALUES ($1, $2)`, [user.id, token]);
+
+            res.send(token);
+
         } else {
             res.sendStatus(404)
         }

@@ -145,8 +145,7 @@ app.post('/add-transaction/:type', async (req,res) => {
 app.post('/sign-out', async (req,res) => {
     const authorization = req.header('Authorization');
     const token = authorization?.replace('Bearer ', '');
-    console.log("acá", authorization)
-    console.log("aqui", token)
+
     if(!token) return res.sendStatus(401)
    
     await connection.query(`

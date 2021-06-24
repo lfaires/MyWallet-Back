@@ -20,14 +20,14 @@ app.post('/', async (req,res) => {
             WHERE email = $1`,[email])
 
         if (login.rows.length === 0) return res.sendStatus(401)
-
+        const user = login.rows[0];
         if(user && bcrypt.compareSync(password, user.password)){
-            const user = login.rows[0];
+            
             const token = v4();
 
             await connection.query(`
-            DELETE FROM sessions ("userId") 
-            VALUES ($1)`, [user.id]);
+            DELETE FROM sessions 
+            WHERE "userId" = $1`, [user.id]);
 
             await connection.query(`
             INSERT INTO sessions ("userId", token) 
@@ -88,15 +88,18 @@ app.get('/transactions', async (req,res) => {
             ON sessions."userId" = users.id
             WHERE sessions.token = $1`,[token])
 
-        const id = user.rows[0].userId
-
-        if(id) {
+        const { userId, name } = user.rows[0]
+        if(name) {
             const result = await connection.query(`
                 SELECT transactions.*, users.name as username FROM transactions 
                 JOIN users
                 ON transactions."userId" = users.id
-                WHERE "userId" = $1`,[id])
-            res.send(result.rows)
+                WHERE "userId" = $1`,[userId])
+            if(!result.rows){
+                res.send({name})
+            } else {
+                res.send(result.rows)
+            }
         } else {
             res.sendStatus(401)
         }
@@ -111,7 +114,7 @@ app.post('/add-transaction/:type', async (req,res) => {
     const token = authorization?.replace('Bearer ', '');
     const { type } = req.params
     const { value, description } = req.body
-    const validValue = parseInt(value)*100
+    const validValue = parseFloat(value.replace(",",".")*100).toFixed(0)
     const created_at = new Date;    
 
     if(!token) return res.sendStatus(401)
@@ -142,11 +145,12 @@ app.post('/add-transaction/:type', async (req,res) => {
 app.post('/sign-out', async (req,res) => {
     const authorization = req.header('Authorization');
     const token = authorization?.replace('Bearer ', '');
-
+    console.log("acá", authorization)
+    console.log("aqui", token)
     if(!token) return res.sendStatus(401)
-    
+   
     await connection.query(`
-    DELTE FROM sessions
+    DELETE FROM sessions
     WHERE token = $1`,[token])
 
     res.sendStatus(200)

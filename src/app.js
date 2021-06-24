@@ -11,7 +11,7 @@ const app = express()
 app.use(express.json());
 app.use(cors());
 
-app.post('/', async (req,res) => {
+app.post('/sign-in', async (req,res) => {
     const { email, password } = req.body;
 
     try{
@@ -169,10 +169,6 @@ app.delete('/transaction/:id', async (req, res) => {
         console.log(error)
         res.sendStatus(501)
     }
-})
-
-app.get('/banana', (req,res) => {
-    res.sendStatus(200)
 })
 
 export default app;

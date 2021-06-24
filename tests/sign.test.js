@@ -3,6 +3,7 @@ import supertest from 'supertest'
 import app from '../src/app.js'
 import connection from '../database/database.js'
 
+
 afterAll( async () => {
     await connection.query('DELETE FROM users') 
     connection.end();
@@ -49,3 +50,26 @@ describe('POST /sign-up', () => {
     })
 })
 
+describe('POST /sign-in', () => {
+    it('return status 200 for valid params', async () => {
+        const body = {
+            email: "teste@teste.com",
+            password: "abcd12"
+        }
+
+        const result = await supertest(app).post('/sign-in').send(body);
+        
+        expect(result.status).toEqual(200)
+    })
+
+    it('return status 401 for invalid params', async () => {
+        const body = {
+            email: "teste", 
+            password:"abcd12",
+        }
+
+        const result = await supertest(app).post('/sign-in').send(body);
+
+        expect(result.status).toEqual(401)
+    })
+})

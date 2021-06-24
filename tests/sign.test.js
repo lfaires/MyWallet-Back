@@ -1,11 +1,10 @@
-//axios não serve pq precisariamos subir o server
 import supertest from 'supertest'
 import app from '../src/app.js'
 import connection from '../database/database.js'
 
-
 afterAll( async () => {
-    await connection.query('DELETE FROM users') 
+    await connection.query('DELETE FROM users')
+    await connection.query('DELETE FROM sessions') 
     connection.end();
 })
 
@@ -71,5 +70,12 @@ describe('POST /sign-in', () => {
         const result = await supertest(app).post('/sign-in').send(body);
 
         expect(result.status).toEqual(401)
+    })
+})
+
+describe('POST /sign-out', () => {
+    it('return status 200 for valid params', async () => {
+        const result = await supertest(app).post('/sign-out').set('Authorization', 'Bearer 8cf2faf3-3136-478f-9bd5-6211b27d1df9');
+        expect(result.status).toEqual(200)
     })
 })

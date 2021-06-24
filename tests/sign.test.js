@@ -1,10 +1,11 @@
 import supertest from 'supertest'
 import app from '../src/app.js'
 import connection from '../database/database.js'
+//tem que trocar a database de financial_data para financial_data_test
 
 afterAll( async () => {
     await connection.query('DELETE FROM users')
-    await connection.query('DELETE FROM sessions') 
+    await connection.query('DELETE FROM sessions')
     connection.end();
 })
 
@@ -75,7 +76,7 @@ describe('POST /sign-in', () => {
 
 describe('POST /sign-out', () => {
     it('return status 200 for valid params', async () => {
-        const result = await supertest(app).post('/sign-out').set('Authorization', 'Bearer 8cf2faf3-3136-478f-9bd5-6211b27d1df9');
+        const result = await supertest(app).post('/sign-out').set('Authorization', 'Bearer 6c479e18-5b38-4306-97ac-7316ac74b089');
         expect(result.status).toEqual(200)
     })
 })

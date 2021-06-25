@@ -51,7 +51,7 @@ app.post('/sign-up', async (req,res) => {
     const lastUpdated = createdDate;
     
     const { error } = signUpSchema.validate({name: name, email: email, password: password, repeat_password: repeatPassword});
-    
+
     if (error !== undefined) return res.sendStatus(400);
 
     try{
@@ -148,8 +148,6 @@ app.post('/transaction/:type', async (req,res) => {
 app.post('/sign-out', async (req,res) => {
     const authorization = req.header('Authorization');
     const token = authorization?.replace('Bearer ', '');
-
-    if(!token) return res.sendStatus(401)
    
     try{
         await connection.query(`

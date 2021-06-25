@@ -102,12 +102,6 @@ describe('POST /sign-out', () => {
         expect(result.status).toEqual(200)
     })
 
-    // it('return status 401 when there is no token', async () => {
-    //     const token = "";
-    //     const result = await supertest(app).post('/sign-out').set('Authorization', `Bearer ${token}`);
-        
-    //     expect(result.status).toEqual(401)
-    // })
 })
 
 beforeEach( async () => {

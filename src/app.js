@@ -117,7 +117,7 @@ app.post('/transaction/:type', async (req,res) => {
     const token = authorization?.replace('Bearer ', '');
     const { type } = req.params
     const { value, description } = req.body
-    const validValue = parseFloat(value.replace(",",".")*100).toFixed(0)
+    const validValue = Math.abs(parseFloat(value.replace(",",".")*100).toFixed(0))
     const created_at = new Date;    
 
     if(!token) return res.sendStatus(401)

@@ -7,7 +7,7 @@ const connection = new Pool({
     password: '123456',
     host: 'localhost',
     port: 5432,
-    database: 'financial_data_test'
+    database: process.env.NODE_ENV === 'test' ? 'financial_data_test' : 'financial_data'
 })
 
 export default connection;

@@ -19,7 +19,7 @@ app.post('/sign-in', async (req,res) => {
             SELECT * FROM users 
             WHERE email = $1`,[email])
 
-        if (login.rows.length === 0) return res.sendStatus(401)
+        if (login.rows.length === 0) return res.sendStatus(404)
         const user = login.rows[0];
         if(user && bcrypt.compareSync(password, user.password)){
             
@@ -33,10 +33,10 @@ app.post('/sign-in', async (req,res) => {
             INSERT INTO sessions ("userId", token) 
             VALUES ($1, $2)`, [user.id, token]);
 
-            res.send(token);
+            res.send({token});
 
         } else {
-            res.sendStatus(404)
+            res.sendStatus(401)
         }
         
     } catch (error){
@@ -51,7 +51,7 @@ app.post('/sign-up', async (req,res) => {
     const lastUpdated = createdDate;
     
     const { error } = signUpSchema.validate({name: name, email: email, password: password, repeat_password: repeatPassword});
- 
+    
     if (error !== undefined) return res.sendStatus(400);
 
     try{
@@ -95,7 +95,9 @@ app.get('/transactions', async (req,res) => {
                 SELECT transactions.*, users.name as username FROM transactions 
                 JOIN users
                 ON transactions."userId" = users.id
-                WHERE "userId" = $1`,[userId])
+                WHERE "userId" = $1
+                ORDER BY created_at DESC`,[userId])
+                
             if(result.rows.length === 0){
                 res.send({name})
             } else {
@@ -149,11 +151,16 @@ app.post('/sign-out', async (req,res) => {
 
     if(!token) return res.sendStatus(401)
    
-    await connection.query(`
-    DELETE FROM sessions
-    WHERE token = $1`,[token])
+    try{
+        await connection.query(`
+        DELETE FROM sessions
+        WHERE token = $1`,[token])
 
-    res.sendStatus(200)
+        res.sendStatus(200)
+    } catch(error){
+        console.log(error)
+        res.sendStatus(501)
+    }
 })
 
 app.delete('/transaction/:id', async (req, res) => {
